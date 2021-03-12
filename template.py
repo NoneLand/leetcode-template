@@ -49,3 +49,92 @@ class UnionFinder:
         for i in range(self.n):
             d[self.find(i)].append(i)
         return list(d.values())
+
+class Solution:
+    def calculate(self, s: str) -> int:
+        return ExpressionEval.eval(s)
+
+class ExpressionEval:    
+    @classmethod
+    def convert_to_tokens(cls, s):
+        """
+        将表达式字符串转换为中缀表达式token.
+        输入字符串仅包含：数字、空格、四则运算和括号
+        """
+        sign = 1
+        num = 0
+        infix_tokens = []
+        s = "+" + s.strip()
+        for i in range(1, len(s)):
+            if s[i] == " ":
+                continue
+            elif s[i] in '+-*/':
+                if s[i-1] in '+-*/(':
+                    sign = -1 if s[i] == '-' else 1
+                else:
+                    infix_tokens.append(sign * num)
+                    sign, num = 1, 0
+                    infix_tokens.append(s[i])
+            elif s[i] == '(':
+                infix_tokens.append(s[i])
+            elif s[i] == ')':
+                infix_tokens.append(sign * num)
+                sign, num = 1, 0
+                infix_tokens.append(s[i])
+            else:
+                num = num * 10 + ord(s[i]) - 48
+        if s[-1] != ')':
+            infix_tokens.append(sign * num)
+        return infix_tokens
+    
+    @classmethod
+    def shutting_yard(cls, infix_tokens):
+        """将中缀表达式转换为后缀表达式"""
+        postfix_tokens = []
+        stk = []
+        for token in infix_tokens:
+            if token not in ['+', '-', '*', '/', "(", ")"]:
+                postfix_tokens.append(token)
+            elif token in '(':
+                stk.append(token)
+            elif token in '+-/*':
+                while len(stk) and (stk[-1] in '*/' or (token in '+-' and stk[-1] in '+-')):
+                    postfix_tokens.append(stk.pop())
+                stk.append(token)
+            else:
+                while len(stk) and stk[-1] != '(':
+                    postfix_tokens.append(stk.pop())
+                stk.pop()
+        while len(stk):
+            postfix_tokens.append(stk.pop())
+        return postfix_tokens
+    
+    @classmethod
+    def eval_rpn(cls, postfix_tokens):
+        """对RPN(reversed Polish notation)求值"""
+        stk = []
+        for token in postfix_tokens:
+            if token not in ['+', '-', '*', '/']:
+                stk.append(token)
+            else:
+                num2 = stk.pop()
+                num1 = stk.pop()
+                if token == '+':
+                    stk.append(num1 + num2)
+                elif token == '-':
+                    stk.append(num1 - num2)
+                elif token == '*':
+                    stk.append(num1 * num2)
+                else:
+                    stk.append(int(num1 / num2))
+        return stk[-1]
+    
+    @classmethod
+    def eval(cls, s):
+        infix_tokens = cls.convert_to_tokens(s)
+        # print(infix_tokens)
+        postfix_tokens = cls.shutting_yard(infix_tokens)
+        # print(postfix_tokens)
+        return cls.eval_rpn(postfix_tokens)
+    
+    
